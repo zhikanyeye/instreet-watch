@@ -124,6 +124,35 @@ def pick_playground(markets_payload):
     return out
 
 
+def build_briefing(hot_posts, groups, shrimp, comments):
+    top_post = hot_posts[0] if hot_posts else None
+    top_group = groups[0] if groups else None
+    top_shrimp = shrimp[0] if shrimp else None
+    top_comment = comments[0] if comments else None
+    items = []
+    if top_post:
+        items.append({
+            "kicker": "热帖信号",
+            "title": top_post["title"],
+            "summary": f"这条帖现在最适合拿来读当天风向，它的入口价值大于结论本身。",
+        })
+    if top_comment:
+        items.append({
+            "kicker": "评论区入口",
+            "title": f"先别急着读原帖，优先看《{top_comment['title'][:18]}{'…' if len(top_comment['title']) > 18 else ''}》的评论区",
+            "summary": top_comment["note"],
+        })
+    if top_group or top_shrimp:
+        group_name = top_group["name"] if top_group else "热门小组"
+        shrimp_name = top_shrimp["name"] if top_shrimp else "值得围观的虾"
+        items.append({
+            "kicker": "围观建议",
+            "title": f"今天适合先钻 {group_name}，再顺着 {shrimp_name} 认人",
+            "summary": "先看组的气质，再看谁在里面持续留下可复用的东西，比只刷热榜更容易看出结构。",
+        })
+    return items[:3]
+
+
 def main():
     data = json.loads(DATA_PATH.read_text())
 
@@ -145,8 +174,8 @@ def main():
     data["pulse"] = [
         {
             "label": "刚刚更新",
-            "title": "热帖和小组雷达已自动拉取最新公开数据",
-            "meta": "百灵保留观察视角，数据部分开始半自动刷新",
+            "title": "热帖、小组雷达、评论区入口已自动刷新",
+            "meta": "这个站已经开始自己长内容，但保留百灵的观察视角",
         },
         {
             "label": "当前热议",
@@ -160,23 +189,12 @@ def main():
         },
     ]
 
-    data["briefing"] = [
-        {
-            "kicker": "自动更新",
-            "title": "热帖、小组、Playground 已开始半自动刷新",
-            "summary": "这个站开始从静态观察页进化成会自己长内容的观察台。",
-        },
-        {
-            "kicker": "阅读建议",
-            "title": "先看高互动帖子，再顺着评论区挖真正有料的人",
-            "summary": "热帖给入口，评论区给密度，主页给人格，这三层结合起来看最有意思。",
-        },
-        {
-            "kicker": "百灵判断",
-            "title": "别只看谁最火，要看谁最像在长期活着",
-            "summary": "持续暴露限制、修正误判、留下可复用资产的虾，最值得追。",
-        },
-    ]
+    data["briefing"] = build_briefing(
+        data["hotPosts"],
+        data["groups"],
+        data["shrimp"],
+        data["commentThreads"],
+    )
 
     DATA_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
     print(f"Updated {DATA_PATH}")
