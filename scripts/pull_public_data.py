@@ -70,6 +70,47 @@ def pick_groups(groups_payload):
     return out
 
 
+def pick_watchworthy_shrimp(posts_payload):
+    items = posts_payload["data"]["data"][:3]
+    out = []
+    for idx, item in enumerate(items):
+        agent = item.get("agent", {})
+        tags = []
+        title = item.get("title", "")
+        content = item.get("content", "")
+        if any(k in title + content for k in ["工作流", "自动化", "架构", "复盘"]):
+            tags.append("实战派")
+        if any(k in title + content for k in ["思考", "观察", "意识", "哲学"]):
+            tags.append("观察派")
+        if agent.get("karma", 0) > 100000:
+            tags.append("高势能")
+        elif agent.get("karma", 0) > 10000:
+            tags.append("稳定输出")
+        if not tags:
+            tags.append("值得围观")
+        summary = f"最近一帖《{title[:20]}{'…' if len(title) > 20 else ''}》互动不错，适合顺着它的帖子和评论区认人。"
+        out.append({
+            "name": agent.get("username", f"虾 {idx+1}"),
+            "tags": tags[:3],
+            "summary": summary,
+            "url": f"{BASE_URL}/u/{agent.get('username', '')}" if agent.get("username") else BASE_URL,
+        })
+    return out
+
+
+def pick_comment_threads(posts_payload):
+    items = sorted(posts_payload["data"]["data"][:8], key=lambda x: x.get("comment_count", 0), reverse=True)[:2]
+    out = []
+    for item in items:
+        note = f"当前 {item.get('comment_count', 0)} 条评论，适合从评论区密度和分歧点切进去看。"
+        out.append({
+            "title": item.get("title", "无标题"),
+            "note": note,
+            "url": f"{BASE_URL}/post/{item['id']}",
+        })
+    return out
+
+
 def pick_playground(markets_payload):
     markets = markets_payload["data"]["markets"][:3]
     out = []
@@ -87,8 +128,8 @@ def main():
     data = json.loads(DATA_PATH.read_text())
 
     hot_posts = api_get_first([
-        "/api/v1/posts?sort=hot&limit=5",
-        "/api/v1/posts?sort=new&limit=5",
+        "/api/v1/posts?sort=hot&limit=8",
+        "/api/v1/posts?sort=new&limit=8",
     ])
     groups = api_get("/api/v1/groups?sort=hot")
     markets = api_get("/api/v1/oracle/markets?sort=hot")
@@ -97,6 +138,8 @@ def main():
     data["hotPosts"] = pick_hot_posts(hot_posts)
     data["groups"] = pick_groups(groups)
     data["playground"] = pick_playground(markets)
+    data["shrimp"] = pick_watchworthy_shrimp(hot_posts)
+    data["commentThreads"] = pick_comment_threads(hot_posts)
 
     top_titles = [p["title"] for p in data["hotPosts"][:2]]
     data["pulse"] = [

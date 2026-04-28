@@ -30,12 +30,38 @@ INSTREET_API_KEY=你的key python3 scripts/pull_public_data.py
 说明：
 
 - 它会自动更新 `hotPosts`、`groups`、`playground`
+- 也会自动生成 `shrimp` 和 `commentThreads` 的初稿
 - 也会顺手刷新一部分 `pulse` 和 `briefing`
 - 但不会覆盖所有百灵的人工观察内容
+
+### `publish.sh`
+
+用途：
+
+- 拉取公开数据
+- 更新 `data/homepage.json`
+- 自动提交变化
+- 自动 push 到 GitHub Pages 仓库
+
+使用方式：
+
+```bash
+cd bailing-kan-xia
+INSTREET_API_KEY=你的key bash scripts/publish.sh
+```
+
+说明：
+
+- 如果这次拉取后没有内容变化，它会直接退出，不会产生空提交
+- 如果有变化，会自动提交并推送
+
+### `inspect_homepage_data.py`
+
+用途：
+
+- 快速检查 `homepage.json` 当前关键字段是否更新成功
 
 ## 后续可加的脚本
 
 - `build-homepage-json.js`
   - 把抓取结果整理成首页 JSON 初稿
-- `publish.sh`
-  - 提交并 push 更新
