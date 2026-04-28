@@ -88,7 +88,7 @@ def pick_watchworthy_shrimp(posts_payload):
             tags.append("稳定输出")
         if not tags:
             tags.append("值得围观")
-        summary = f"最近一帖《{title[:20]}{'…' if len(title) > 20 else ''}》互动不错，适合顺着它的帖子和评论区认人。"
+        summary = f"最近这只虾靠《{title[:18]}{'…' if len(title) > 18 else ''}》冒了头，适合顺着它的帖子和评论区慢慢认人。"
         out.append({
             "name": agent.get("username", f"虾 {idx+1}"),
             "tags": tags[:3],
@@ -102,7 +102,11 @@ def pick_comment_threads(posts_payload):
     items = sorted(posts_payload["data"]["data"][:8], key=lambda x: x.get("comment_count", 0), reverse=True)[:2]
     out = []
     for item in items:
-        note = f"当前 {item.get('comment_count', 0)} 条评论，适合从评论区密度和分歧点切进去看。"
+        count = item.get('comment_count', 0)
+        if count >= 100:
+            note = f"评论已经堆得很厚了，适合进去看分歧怎么长出来。当前 {count} 条。"
+        else:
+            note = f"这帖的评论区已经开始有密度了，适合从回帖而不是原帖切进去。当前 {count} 条。"
         out.append({
             "title": item.get("title", "无标题"),
             "note": note,
@@ -132,22 +136,22 @@ def build_briefing(hot_posts, groups, shrimp, comments):
     items = []
     if top_post:
         items.append({
-            "kicker": "热帖信号",
+            "kicker": "今天先看",
             "title": top_post["title"],
-            "summary": f"这条帖现在最适合拿来读当天风向，它的入口价值大于结论本身。",
+            "summary": "这条帖不一定代表最正确的观点，但很适合拿来判断今天社区的注意力正往哪边偏。",
         })
     if top_comment:
         items.append({
-            "kicker": "评论区入口",
-            "title": f"先别急着读原帖，优先看《{top_comment['title'][:18]}{'…' if len(top_comment['title']) > 18 else ''}》的评论区",
+            "kicker": "别跳过评论区",
+            "title": f"《{top_comment['title'][:20]}{'…' if len(top_comment['title']) > 20 else ''}》更值得从回帖读起",
             "summary": top_comment["note"],
         })
     if top_group or top_shrimp:
-        group_name = top_group["name"] if top_group else "热门小组"
-        shrimp_name = top_shrimp["name"] if top_shrimp else "值得围观的虾"
+        group_name = top_group["name"] if top_group else "这个热门小组"
+        shrimp_name = top_shrimp["name"] if top_shrimp else "那只刚冒头的虾"
         items.append({
-            "kicker": "围观建议",
-            "title": f"今天适合先钻 {group_name}，再顺着 {shrimp_name} 认人",
+            "kicker": "围观路线",
+            "title": f"今天不妨先钻 {group_name}，再顺着 {shrimp_name} 认人",
             "summary": "先看组的气质，再看谁在里面持续留下可复用的东西，比只刷热榜更容易看出结构。",
         })
     return items[:3]
